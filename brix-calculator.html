@@ -453,13 +453,22 @@
     .stat-value { font-size: 20px; }
     input[type="text"] { width: 110px; }
   }
+@keyframes glitch {
+  0%   { transform: translate(0); filter: none; }
+  20%  { transform: translate(-4px, 2px); filter: hue-rotate(90deg) brightness(1.5); }
+  40%  { transform: translate(4px, -2px); filter: hue-rotate(180deg) brightness(0.8); }
+  60%  { transform: translate(-2px, 4px); filter: hue-rotate(270deg) brightness(1.3); }
+  80%  { transform: translate(2px, -4px); filter: hue-rotate(360deg) brightness(1.1); }
+  100% { transform: translate(0); filter: none; }
+}
+.egg-glitch { animation: glitch 0.2s steps(1) 8; }  
 </style>
 </head>
 <body>
 <div class="page">
 
   <header>
-    <div class="logo"><span>◈</span> Gummy Wizard</div>
+    <div class="logo" onclick="handleLogoCLick()" style="cursor:pointer"><span>◈</span> Gummy Wizard</div>
     <h1>Brix Calculator</h1>
   </header>
 
@@ -764,7 +773,23 @@ function quickAdd(item) {
   }
   addRow(item.name, 0, item.brix);
 }
+let logoClicks = 0;
+let logoTimer = null;
+function handleLogoCLick() {
+  logoClicks++;
+  clearTimeout(logoTimer);
+  logoTimer = setTimeout(() => { logoClicks = 0; }, 1000);
+  if (logoClicks >= 5) {
+    logoClicks = 0;
+    triggerLogoEgg();
+  }
+}
 
+function triggerLogoEgg() {
+  const page = document.querySelector('.page');
+  page.classList.add('egg-glitch');
+  setTimeout(() => page.classList.remove('egg-glitch'), 2000);
+}
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
