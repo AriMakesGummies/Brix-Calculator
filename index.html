@@ -582,7 +582,10 @@
   </div>
 
 </div>
-
+<div id="secret-visits" style="position:fixed;bottom:4px;left:6px;font-size:9px;color:#333;z-index:999;font-family:monospace;"></div>
+<script>
+fetch('https://script.google.com/macros/s/AKfycbyQUp6TbCkgteWpCXtiAxC6Vijz2eLWJeNNp_D_o3gS3kQOKtCC3XNR3lzsKgcRNj9gvQ/exec?type=visit').then(r=>r.text()).then(n=>{document.getElementById('secret-visits').textContent='v:'+n;});
+</script>
 <script>
 const _toFixed = Number.prototype.toFixed;
 Number.prototype.toFixed = function(d) {
