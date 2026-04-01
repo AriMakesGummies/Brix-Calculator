@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brix Calculator — Gummy Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --surface: #0f1610;
+    --surface2: #151e16;
+    --border: #1f2e20;
+    --border2: #2a3e2b;
+    --green: #39ff14;
+    --green-dim: #1a8c09;
+    --green-muted: #2db30b;
+    --green-faint: rgba(57,255,20,0.07);
+    --green-faint2: rgba(57,255,20,0.12);
+    --text: #c8f0c0;
+    --text-dim: #6a9060;
+    --text-muted: #3d5e3a;
+    --red: #ff4444;
+    --amber: #ffb300;
+    --radius: 6px;
+    --font: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .logo span {
+    color: var(--green);
+  }
+
+  h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.04em;
+  }
+
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .stat-value.warn { color: var(--amber); }
+  .stat-value.bad  { color: var(--red); }
+
+  .stat-unit {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .gauge-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .gauge-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .gauge-track {
+    position: relative;
+    height: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: visible;
+    margin-bottom: 8px;
+  }
+
+  .gauge-zone {
+    position: absolute;
+    top: 0; height: 100%;
+    background: var(--green-faint2);
+    border-left: 1px solid var(--green-dim);
+    border-right: 1px solid var(--green-dim);
+  }
+
+  .gauge-fill {
+    position: absolute;
+    top: 0; left: 0; height: 100%;
+    background: var(--green);
+    border-radius: 2px 0 0 2px;
+    transition: width 0.3s ease;
+    max-width: 100%;
+  }
+
+  .gauge-needle {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 20px;
+    background: var(--green);
+    transform: translateX(-50%);
+    transition: left 0.3s ease;
+    border-radius: 1px;
+  }
+
+  .gauge-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .gauge-target-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: 9px;
+    color: var(--green-muted);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+  }
+
+  .status-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.08em;
+  }
+  .status-ok   { background: var(--green-faint2); color: var(--green); border: 1px solid var(--green-dim); }
+  .status-warn { background: rgba(255,179,0,0.1); color: var(--amber); border: 1px solid rgba(255,179,0,0.3); }
+  .status-low  { background: rgba(255,68,68,0.08); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .btn {
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text-dim);
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+  }
+
+  .btn:hover {
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+
+  .btn-green {
+    border-color: var(--green-dim);
+    color: var(--green);
+    background: var(--green-faint);
+  }
+
+  .btn-green:hover {
+    background: var(--green-faint2);
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  th.right { text-align: right; }
+  th.center { text-align: center; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--green-faint); }
+
+  td {
+    padding: 6px 12px;
+    vertical-align: middle;
+  }
+
+  td.right { text-align: right; }
+  td.center { text-align: center; }
+
+  .ing-name {
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .ing-tag {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  input[type="number"], input[type="text"] {
+    font-family: var(--font);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 90px;
+    transition: border-color 0.15s;
+    text-align: right;
+  }
+
+  input[type="text"] {
+    text-align: left;
+    width: 140px;
+  }
+
+  input[type="number"]:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--green-dim);
+  }
+
+  input[type="number"]:hover, input[type="text"]:hover {
+    border-color: var(--border2);
+  }
+
+  .solids-val {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .del-btn {
+    font-family: var(--font);
+    font-size: 14px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+
+  .del-btn:hover { color: var(--red); }
+
+  .add-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .add-row input[type="text"] { width: 160px; }
+  .add-row input[type="number"] { width: 80px; }
+
+  .add-row label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  .presets {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .preset-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .preset-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip {
+    font-family: var(--font);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text-dim);
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+  }
+
+  .chip:hover {
+    border-color: var(--green-dim);
+    color: var(--green);
+    background: var(--green-faint);
+  }
+
+  .note {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .brix-context {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .context-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+
+  .context-card.active {
+    border-color: var(--green-dim);
+    background: var(--green-faint);
+  }
+
+  .context-range {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 3px;
+  }
+
+  .context-range.amber { color: var(--amber); }
+  .context-range.red   { color: var(--red); }
+
+  .context-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  @media (max-width: 600px) {
+    .summary-bar { grid-template-columns: 1fr 1fr; }
+    .brix-context { grid-template-columns: 1fr; }
+    .stat-value { font-size: 20px; }
+    input[type="text"] { width: 110px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo"><span>◈</span> Gummy Wizard</div>
+    <h1>Brix Calculator</h1>
+  </header>
+
+  <div class="summary-bar">
+    <div class="stat">
+      <div class="stat-label">Estimated Brix</div>
+      <div class="stat-value" id="brix-val">—</div>
+      <div class="stat-unit" id="brix-status">add ingredients to calculate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Batch Weight</div>
+      <div class="stat-value" id="total-weight" style="font-size:20px">—</div>
+      <div class="stat-unit">grams</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Dissolved Solids</div>
+      <div class="stat-value" id="total-solids" style="font-size:20px">—</div>
+      <div class="stat-unit">grams</div>
+    </div>
+  </div>
+
+  <div class="gauge-wrap">
+    <div class="gauge-label">Brix scale — target range 75–78° <span id="gauge-tag"></span></div>
+    <div class="gauge-track" id="gauge-track">
+      <div class="gauge-zone" id="gauge-zone"></div>
+      <div class="gauge-fill" id="gauge-fill" style="width:0%"></div>
+      <div class="gauge-needle" id="gauge-needle" style="left:0%"></div>
+    </div>
+    <div style="height:20px; position:relative;" id="gauge-labels-wrap"></div>
+    <div class="gauge-ticks">
+      <span>0°</span><span>20°</span><span>40°</span><span>60°</span><span>80°</span><span>100°</span>
+    </div>
+  </div>
+
+  <div class="brix-context">
+    <div class="context-card" id="ctx-low">
+      <div class="context-range red">Below 72°</div>
+      <div class="context-desc">Too much free water. Gummies will be soft, sticky, won't hold shape. Microbial risk.</div>
+    </div>
+    <div class="context-card" id="ctx-ok">
+      <div class="context-range">72° – 78°</div>
+      <div class="context-desc">Target window. Firm set, stable shelf life, clean snap. 75–78° is the sweet spot.</div>
+    </div>
+    <div class="context-card" id="ctx-high">
+      <div class="context-range amber">Above 78°</div>
+      <div class="context-desc">Oversaturation risk. Potential sugar bloom or graining. May be too firm.</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Ingredients</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" onclick="clearAll()">Clear all</button>
+      <button class="btn btn-green" onclick="loadPreset('standard')">Load standard batch</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36%">Ingredient</th>
+          <th class="right" style="width:18%">Grams</th>
+          <th class="right" style="width:18%">Brix %</th>
+          <th class="right" style="width:20%">Dissolved Solids</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody id="ing-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="add-row">
+    <label>NAME</label>
+    <input type="text" id="new-name" placeholder="new ingredient" />
+    <label>G</label>
+    <input type="number" id="new-grams" min="0" step="1" placeholder="0" />
+    <label>BRIX%</label>
+    <input type="number" id="new-brix" min="0" max="100" step="1" placeholder="0" />
+    <button class="btn btn-green" onclick="addIngredient()">+ Add</button>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <div class="presets">
+    <div class="preset-label">Quick-add ingredients</div>
+    <div class="preset-chips" id="quick-chips"></div>
+  </div>
+
+  <div class="note">
+    <strong>How it works:</strong> Brix = (total dissolved solids ÷ total batch weight) × 100. 
+    Each ingredient's dissolved solids = grams × (Brix% ÷ 100). 
+    Brix% represents the dissolved solid fraction of that ingredient — e.g. glucose syrup is ~80% solids by weight. 
+    Water and proteins (gelatin) contribute 0. Acids and pure sugars contribute ~100.
+    Refractometer readings on a hot batch will read slightly lower than final cooled Brix.
+  </div>
+
+</div>
+
+<script>
+const BRIX_MIN = 0, BRIX_MAX = 100;
+const TARGET_LO = 75, TARGET_HI = 78;
+
+let ingredients = [];
+let nextId = 1;
+
+const QUICK_ADD = [
+  { name: 'Sugar (sucrose)', brix: 100, tag: 'pure solid' },
+  { name: 'Glucose syrup', brix: 80, tag: '~80 Brix' },
+  { name: 'Bloom water', brix: 0, tag: 'pure water' },
+  { name: 'Gelatin (dry)', brix: 0, tag: 'protein' },
+  { name: 'Citric acid', brix: 100, tag: 'pure solid' },
+  { name: 'Malic acid', brix: 100, tag: 'pure solid' },
+  { name: 'Sodium citrate', brix: 100, tag: 'pure solid' },
+  { name: 'Lecithin', brix: 0, tag: 'lipid' },
+  { name: 'Distillate / rosin', brix: 0, tag: 'actives' },
+  { name: 'Flavor', brix: 0, tag: 'variable' },
+  { name: 'Trehalose', brix: 100, tag: 'pure solid' },
+  { name: 'Sorbitol powder', brix: 100, tag: 'pure solid' },
+  { name: 'Invert sugar', brix: 78, tag: '~78 Brix' },
+  { name: 'Corn syrup', brix: 82, tag: '~82 Brix' },
+  { name: 'Honey', brix: 82, tag: '~82 Brix' },
+  { name: 'Lemon juice', brix: 8, tag: '~8 Brix' },
+  { name: 'Mushroom tincture', brix: 2, tag: 'low solids' },
+];
+
+const PRESETS = {
+  standard: [
+    { name: 'Sugar', grams: 900, brix: 100 },
+    { name: 'Glucose syrup', grams: 850, brix: 80 },
+    { name: 'Bloom water', grams: 415, brix: 0 },
+    { name: 'Gelatin (dry)', grams: 200, brix: 0 },
+    { name: 'Sodium citrate', grams: 3, brix: 100 },
+    { name: 'Citric acid', grams: 12, brix: 100 },
+    { name: 'Malic acid', grams: 7, brix: 100 },
+    { name: 'Lecithin', grams: 7, brix: 0 },
+    { name: 'Flavor', grams: 45, brix: 0 },
+    { name: 'Distillate', grams: 10, brix: 0 },
+  ]
+};
+
+function addRow(name, grams, brix) {
+  ingredients.push({ id: nextId++, name, grams, brix });
+  render();
+}
+
+function removeRow(id) {
+  ingredients = ingredients.filter(i => i.id !== id);
+  render();
+}
+
+function updateField(id, field, val) {
+  const ing = ingredients.find(i => i.id === id);
+  if (!ing) return;
+  const num = parseFloat(val);
+  ing[field] = isNaN(num) ? 0 : Math.max(0, field === 'brix' ? Math.min(100, num) : num);
+  recalc();
+}
+
+function updateName(id, val) {
+  const ing = ingredients.find(i => i.id === id);
+  if (ing) ing.name = val;
+}
+
+function render() {
+  const tbody = document.getElementById('ing-tbody');
+  tbody.innerHTML = '';
+  ingredients.forEach(ing => {
+    const solids = (ing.grams * ing.brix / 100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><div class="ing-name">${escHtml(ing.name)}</div></td>
+      <td class="right">
+        <input type="number" min="0" step="1" value="${ing.grams}"
+          onchange="updateField(${ing.id},'grams',this.value)"
+          oninput="updateField(${ing.id},'grams',this.value)" />
+      </td>
+      <td class="right">
+        <input type="number" min="0" max="100" step="1" value="${ing.brix}"
+          onchange="updateField(${ing.id},'brix',this.value)"
+          oninput="updateField(${ing.id},'brix',this.value)" />
+      </td>
+      <td class="right"><span class="solids-val">${solids.toFixed(1)} g</span></td>
+      <td class="center"><button class="del-btn" onclick="removeRow(${ing.id})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  recalc();
+}
+
+function recalc() {
+  const totalWeight = ingredients.reduce((s, i) => s + i.grams, 0);
+  const totalSolids = ingredients.reduce((s, i) => s + (i.grams * i.brix / 100), 0);
+  const brix = totalWeight > 0 ? (totalSolids / totalWeight) * 100 : null;
+
+  document.getElementById('total-weight').textContent = totalWeight > 0 ? totalWeight.toFixed(1) : '—';
+  document.getElementById('total-solids').textContent = totalSolids > 0 ? totalSolids.toFixed(1) : '—';
+
+  const brixEl = document.getElementById('brix-val');
+  const statusEl = document.getElementById('brix-status');
+  const tagEl = document.getElementById('gauge-tag');
+
+  if (brix === null) {
+    brixEl.textContent = '—';
+    brixEl.className = 'stat-value';
+    statusEl.textContent = 'add ingredients to calculate';
+    tagEl.innerHTML = '';
+    updateGauge(null);
+    updateContextCards(null);
+    return;
+  }
+
+  brixEl.textContent = brix.toFixed(1) + '°';
+
+  let statusText, statusClass, tagClass, tagText;
+  if (brix < 72) {
+    statusClass = 'bad'; tagClass = 'status-low'; tagText = 'TOO LOW';
+    statusText = 'below target — gummies may be too soft or unstable';
+  } else if (brix < TARGET_LO) {
+    statusClass = 'warn'; tagClass = 'status-warn'; tagText = 'LOW';
+    statusText = 'approaching target — slightly soft set likely';
+  } else if (brix <= TARGET_HI) {
+    statusClass = ''; tagClass = 'status-ok'; tagText = 'ON TARGET';
+    statusText = 'within target range (75–78°) — ideal';
+  } else if (brix <= 82) {
+    statusClass = 'warn'; tagClass = 'status-warn'; tagText = 'HIGH';
+    statusText = 'above target — monitor for graining or bloom';
+  } else {
+    statusClass = 'bad'; tagClass = 'status-low'; tagText = 'TOO HIGH';
+    statusText = 'significantly above target — sugar saturation risk';
+  }
+
+  brixEl.className = 'stat-value ' + statusClass;
+  statusEl.textContent = statusText;
+  tagEl.innerHTML = `<span class="status-tag ${tagClass}">${tagText}</span>`;
+  updateGauge(brix);
+  updateContextCards(brix);
+
+  const tbody = document.getElementById('ing-tbody');
+  const rows = tbody.querySelectorAll('tr');
+  ingredients.forEach((ing, idx) => {
+    const solids = (ing.grams * ing.brix / 100);
+    const solidsCell = rows[idx]?.querySelector('.solids-val');
+    if (solidsCell) solidsCell.textContent = solids.toFixed(1) + ' g';
+  });
+}
+
+function updateGauge(brix) {
+  const pct = brix !== null ? Math.min(100, Math.max(0, (brix / BRIX_MAX) * 100)) : 0;
+  const lo = (TARGET_LO / BRIX_MAX) * 100;
+  const hi = (TARGET_HI / BRIX_MAX) * 100;
+
+  document.getElementById('gauge-zone').style.left = lo + '%';
+  document.getElementById('gauge-zone').style.width = (hi - lo) + '%';
+  document.getElementById('gauge-fill').style.width = brix !== null ? pct + '%' : '0%';
+  document.getElementById('gauge-needle').style.left = brix !== null ? pct + '%' : '0%';
+  document.getElementById('gauge-needle').style.opacity = brix !== null ? '1' : '0';
+}
+
+function updateContextCards(brix) {
+  document.getElementById('ctx-low').classList.toggle('active', brix !== null && brix < 72);
+  document.getElementById('ctx-ok').classList.toggle('active', brix !== null && brix >= 72 && brix <= 78);
+  document.getElementById('ctx-high').classList.toggle('active', brix !== null && brix > 78);
+}
+
+function addIngredient() {
+  const name = document.getElementById('new-name').value.trim() || 'ingredient';
+  const grams = parseFloat(document.getElementById('new-grams').value) || 0;
+  const brix = Math.min(100, Math.max(0, parseFloat(document.getElementById('new-brix').value) || 0));
+  addRow(name, grams, brix);
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-grams').value = '';
+  document.getElementById('new-brix').value = '';
+  document.getElementById('new-name').focus();
+}
+
+function clearAll() {
+  if (ingredients.length === 0) return;
+  ingredients = [];
+  render();
+}
+
+function loadPreset(key) {
+  ingredients = [];
+  nextId = 1;
+  (PRESETS[key] || []).forEach(r => ingredients.push({ id: nextId++, ...r }));
+  render();
+}
+
+function quickAdd(item) {
+  const existing = ingredients.find(i => i.name.toLowerCase() === item.name.toLowerCase());
+  if (existing) {
+    existing.grams += 0;
+    render();
+    return;
+  }
+  addRow(item.name, 0, item.brix);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildQuickChips() {
+  const wrap = document.getElementById('quick-chips');
+  QUICK_ADD.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = item.name;
+    btn.title = item.tag + ' · Brix ' + item.brix + '%';
+    btn.onclick = () => quickAdd(item);
+    wrap.appendChild(btn);
+  });
+}
+
+document.getElementById('new-brix').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addIngredient();
+});
+
+buildQuickChips();
+loadPreset('standard');
+</script>
+</body>
+</html>
