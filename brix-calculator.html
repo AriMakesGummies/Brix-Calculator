@@ -3,29 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brix Calculator — Gummy Wizard</title>
+<title>Brix Calculator - Gummy Wizard</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0f0a;
-    --surface: #0f1610;
-    --surface2: #151e16;
-    --border: #1f2e20;
-    --border2: #2a3e2b;
-    --green: #39ff14;
-    --green-dim: #1a8c09;
-    --green-muted: #2db30b;
-    --green-faint: rgba(57,255,20,0.07);
-    --green-faint2: rgba(57,255,20,0.12);
-    --text: #c8f0c0;
-    --text-dim: #6a9060;
-    --text-muted: #3d5e3a;
-    --red: #ff4444;
-    --amber: #ffb300;
+    --bg: #111113;
+    --surface: #1c1c1f;
+    --surface2: #232326;
+    --border: #2e2e32;
+    --border2: #3a3a3f;
+    --green: #4ade80;
+    --green-dim: #16a34a;
+    --green-muted: #22c55e;
+    --green-faint: rgba(74,222,128,0.07);
+    --green-faint2: rgba(74,222,128,0.12);
+    --text: #f4f4f5;
+    --text-dim: #a1a1aa;
+    --text-muted: #52525b;
+    --red: #f87171;
+    --amber: #fbbf24;
     --radius: 6px;
     --font: 'IBM Plex Mono', monospace;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
@@ -44,8 +43,9 @@
 
   header {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 28px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
@@ -63,7 +63,7 @@
   }
 
   h1 {
-    font-size: 16px;
+    font-size: 28px;
     font-weight: 600;
     color: var(--green);
     letter-spacing: 0.04em;
@@ -426,8 +426,9 @@
   }
 
   .context-card.active {
-    border-color: var(--green-dim);
-    background: var(--green-faint);
+    border-color: var(--green);
+    background: var(--green-faint2);
+    box-shadow: 0 0 0 1px var(--green-dim);
   }
 
   .context-range {
@@ -481,7 +482,7 @@
   </div>
 
   <div class="gauge-wrap">
-    <div class="gauge-label">Brix scale — target range 75–78° <span id="gauge-tag"></span></div>
+    <div class="gauge-label">Brix scale - target range 75–78° <span id="gauge-tag"></span></div>
     <div class="gauge-track" id="gauge-track">
       <div class="gauge-zone" id="gauge-zone"></div>
       <div class="gauge-fill" id="gauge-fill" style="width:0%"></div>
@@ -551,7 +552,7 @@
   <div class="note">
     <strong>How it works:</strong> Brix = (total dissolved solids ÷ total batch weight) × 100. 
     Each ingredient's dissolved solids = grams × (Brix% ÷ 100). 
-    Brix% represents the dissolved solid fraction of that ingredient — e.g. glucose syrup is ~80% solids by weight. 
+    Brix% represents the dissolved solid fraction of that ingredient - e.g. glucose syrup is ~80% solids by weight. 
     Water and proteins (gelatin) contribute 0. Acids and pure sugars contribute ~100.
     Refractometer readings on a hot batch will read slightly lower than final cooled Brix.
   </div>
@@ -561,7 +562,11 @@
 <script>
 const BRIX_MIN = 0, BRIX_MAX = 100;
 const TARGET_LO = 75, TARGET_HI = 78;
-
+function calcBrix(solubles, water) {
+  if (!solubles || !water) return 0;
+  const totalWater = water + solubles * 0.10;
+  return (solubles / (solubles + totalWater)) * 100 + 1.5;
+}
 let ingredients = [];
 let nextId = 1;
 
@@ -569,15 +574,19 @@ const QUICK_ADD = [
   { name: 'Sugar (sucrose)', brix: 100, tag: 'pure solid' },
   { name: 'Glucose syrup', brix: 80, tag: '~80 Brix' },
   { name: 'Bloom water', brix: 0, tag: 'pure water' },
-  { name: 'Gelatin (dry)', brix: 0, tag: 'protein' },
+  { name: 'Gelatin (sheet)', brix: 0, tag: 'protein' },
   { name: 'Citric acid', brix: 100, tag: 'pure solid' },
-  { name: 'Malic acid', brix: 100, tag: 'pure solid' },
-  { name: 'Sodium citrate', brix: 100, tag: 'pure solid' },
   { name: 'Lecithin', brix: 0, tag: 'lipid' },
   { name: 'Distillate / rosin', brix: 0, tag: 'actives' },
   { name: 'Flavor', brix: 0, tag: 'variable' },
   { name: 'Trehalose', brix: 100, tag: 'pure solid' },
   { name: 'Sorbitol powder', brix: 100, tag: 'pure solid' },
+  { name: 'Allulose', brix: 70, tag: '~70 Brix' },
+  { name: 'Dextrose', brix: 100, tag: 'pure solid' },
+  { name: 'Erythritol', brix: 100, tag: 'pure solid' },
+  { name: 'Tapioca syrup', brix: 79, tag: '~79 Brix' },
+  { name: 'Agave syrup', brix: 76, tag: '~76 Brix' },
+  { name: 'MCT oil', brix: 0, tag: 'lipid/carrier' },
   { name: 'Invert sugar', brix: 78, tag: '~78 Brix' },
   { name: 'Corn syrup', brix: 82, tag: '~82 Brix' },
   { name: 'Honey', brix: 82, tag: '~82 Brix' },
@@ -587,16 +596,13 @@ const QUICK_ADD = [
 
 const PRESETS = {
   standard: [
-    { name: 'Sugar', grams: 900, brix: 100 },
-    { name: 'Glucose syrup', grams: 850, brix: 80 },
-    { name: 'Bloom water', grams: 415, brix: 0 },
-    { name: 'Gelatin (dry)', grams: 200, brix: 0 },
-    { name: 'Sodium citrate', grams: 3, brix: 100 },
-    { name: 'Citric acid', grams: 12, brix: 100 },
-    { name: 'Malic acid', grams: 7, brix: 100 },
-    { name: 'Lecithin', grams: 7, brix: 0 },
-    { name: 'Flavor', grams: 45, brix: 0 },
-    { name: 'Distillate', grams: 10, brix: 0 },
+    { name: 'Sugar', grams: 1000, brix: 100 },
+    { name: 'Corn syrup', grams: 500, brix: 82 },
+    { name: 'Bloom water', grams: 300, brix: 0 },
+    { name: 'Gelatin (powder)', grams: 200, brix: 0 },
+    { name: 'Citric acid', grams: 10, brix: 100 },
+    { name: 'Flavor', grams: 100, brix: 0 },
+    { name: 'Active input', grams: 25, brix: 0 },
   ]
 };
 
@@ -652,7 +658,8 @@ function render() {
 function recalc() {
   const totalWeight = ingredients.reduce((s, i) => s + i.grams, 0);
   const totalSolids = ingredients.reduce((s, i) => s + (i.grams * i.brix / 100), 0);
-  const brix = totalWeight > 0 ? (totalSolids / totalWeight) * 100 : null;
+  const water = ingredients.filter(i => i.name.toLowerCase().includes('water')).reduce((s, i) => s + i.grams, 0);
+  const brix = totalWeight > 0 && water > 0 ? calcBrix(totalSolids, water) : null;
 
   document.getElementById('total-weight').textContent = totalWeight > 0 ? totalWeight.toFixed(1) : '—';
   document.getElementById('total-solids').textContent = totalSolids > 0 ? totalSolids.toFixed(1) : '—';
@@ -676,19 +683,19 @@ function recalc() {
   let statusText, statusClass, tagClass, tagText;
   if (brix < 72) {
     statusClass = 'bad'; tagClass = 'status-low'; tagText = 'TOO LOW';
-    statusText = 'below target — gummies may be too soft or unstable';
+    statusText = 'below target - gummies may be too soft or unstable';
   } else if (brix < TARGET_LO) {
     statusClass = 'warn'; tagClass = 'status-warn'; tagText = 'LOW';
-    statusText = 'approaching target — slightly soft set likely';
+    statusText = 'approaching target - slightly soft set likely';
   } else if (brix <= TARGET_HI) {
     statusClass = ''; tagClass = 'status-ok'; tagText = 'ON TARGET';
-    statusText = 'within target range (75–78°) — ideal';
+    statusText = 'within target range (75–78°) - ideal';
   } else if (brix <= 82) {
     statusClass = 'warn'; tagClass = 'status-warn'; tagText = 'HIGH';
-    statusText = 'above target — monitor for graining or bloom';
+    statusText = 'above target - monitor for graining or bloom';
   } else {
     statusClass = 'bad'; tagClass = 'status-low'; tagText = 'TOO HIGH';
-    statusText = 'significantly above target — sugar saturation risk';
+    statusText = 'significantly above target -sugar saturation risk';
   }
 
   brixEl.className = 'stat-value ' + statusClass;
