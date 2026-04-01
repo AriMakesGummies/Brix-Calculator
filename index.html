@@ -566,7 +566,7 @@
   </div>
   <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
     <input type="email" id="waitlist-email" placeholder="your@email.com" style="width:220px;" />
-    <button class="btn btn-green" onclick="submitWaitlist()">Get early access</button>
+    <button class="btn btn-green" onclick="Waitlist()">Get early access</button>
   </div>
   <div id="waitlist-msg" style="font-size:11px; margin-top:8px; color: var(--green); display:none;">You're on the list!</div>
 </div>
@@ -608,6 +608,11 @@ new MutationObserver(() => {
 function submitWaitlist() {
   const email = document.getElementById('waitlist-email').value.trim();
   if (!email || !email.includes('@')) return;
+  fetch('https://script.google.com/macros/s/AKfycbyQUp6TbCkgteWpCXtiAxC6Vijz2eLWJeNNp_D_o3gS3kQOKtCC3XNR3lzsKgcRNj9gvQ/exec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
   document.getElementById('waitlist-msg').style.display = 'block';
   document.getElementById('waitlist-email').value = '';
 }
