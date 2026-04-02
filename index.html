@@ -447,7 +447,9 @@
     line-height: 1.4;
   }
 
-  @media (max-width: 600px) {
+  .add-row { flex-wrap: wrap; }
+  .add-row input[type="text"] { width: 100%; }
+  .add-row input[type="number"] { width: 70px; }
     .summary-bar { grid-template-columns: 1fr 1fr; }
     .brix-context { grid-template-columns: 1fr; }
     .stat-value { font-size: 20px; }
